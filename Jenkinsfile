@@ -40,7 +40,7 @@ pipeline {
         IMAGE_NAME      = "student-management-system"
         IMAGE_TAG       = "${env.BUILD_NUMBER}"
         CONTAINER_NAME  = "sms-app"
-        APP_PORT        = "8080"
+        APP_PORT        = "8081"
     }
 
     options {
