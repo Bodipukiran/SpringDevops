@@ -98,18 +98,14 @@ pipeline {
             steps {
                 echo "Stopping any previous container and starting a fresh one..."
                 script {
-                    // Equivalent of the old "docker rm -f ... || true": on a fresh
-                    // agent there is no previous container yet, so this command is
-                    // expected to fail the first time. Catching it here (rather than
-                    // relying on shell-specific "|| true"/"|| exit 0" syntax) works
-                    // identically whether runCmd used sh or bat underneath.
                     try {
                         runCmd("docker rm -f ${CONTAINER_NAME}")
                     } catch (err) {
                         echo "No previous container named ${CONTAINER_NAME} to remove - continuing."
                     }
                 }
-                runCmd("docker run -d --name ${CONTAINER_NAME} -p ${APP_PORT}:8080 ${IMAGE_NAME}:latest")
+
+                runCmd("docker run -d --name ${CONTAINER_NAME} -p ${APP_PORT}:8081 ${IMAGE_NAME}:latest")
             }
         }
     }
