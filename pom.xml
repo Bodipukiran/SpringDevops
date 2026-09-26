@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Spring Boot 3 parent POM: gives us dependency management (versions) for
+         every starter below, plus sensible default plugin configuration.
+
+         Bumped 3.2.5 -> 3.5.16 for JDK 25 support: Spring Boot's own system
+         requirements say 3.2.x tops out at Java 21/22, while the 3.5.x line
+         (Spring Framework 6.2.19+) is documented as compatible "up to and
+         including Java 25". This stays on the Spring Boot 3.x / Framework 6.x
+         major line on purpose - jumping to Spring Boot 4 (Framework 7) would
+         pull in a Jakarta EE 11 / Servlet 6.1 baseline and other breaking
+         changes that are NOT required just to run on JDK 25. -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.16</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.dispatchtrack</groupId>
+    <artifactId>student-management-system</artifactId>
+    <version>1.0.0</version>
+    <name>student-management-system</name>
+    <description>Student Management System - Spring Boot 3 + MySQL CRUD REST API with Docker, Jenkins and Prometheus/Grafana observability</description>
+    <packaging>jar</packaging>
+
+    <properties>
+        <!-- java.version is the single source of truth Spring Boot's parent POM uses
+             to derive both maven.compiler.source and maven.compiler.target, so this
+             one change is all that's needed to move the whole compiler toolchain to 25.
+             (Deliberately NOT also setting maven.compiler.source/target explicitly
+             anymore - leaving both java.version AND separate source/target properties
+             set is redundant and, on some compiler-plugin/javac combinations, causes
+             a "source/target already set" conflict once release-style flags are involved.) -->
+        <java.version>25</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Explicit Lombok override. 1.18.40 (Sept 2025) was the FIRST release with
+             any JDK 25 support, but that support was rough at the edges - later 1.18.4x
+             patches specifically fixed JDK25 annotation-processing/javac bugs. Pinned to
+             the newest known-good release rather than the bare minimum floor. -->
+        <lombok.version>1.18.48</lombok.version>
+    </properties>
+
+    <dependencies>
+        <!-- Core web MVC starter: gives us @RestController, embedded Tomcat, Jackson JSON, etc. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Spring Data JPA: repository abstraction over Hibernate/JPA for talking to MySQL. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- Bean Validation (Jakarta Validation / Hibernate Validator) for @NotBlank, @Email, etc. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Actuator: exposes /actuator/health, /actuator/info, /actuator/metrics, etc. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Micrometer registry that turns Actuator metrics into Prometheus' text exposition
+             format at /actuator/prometheus, so Prometheus can scrape this app directly. -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- MySQL JDBC driver used at runtime to connect to the MySQL database. -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Lombok (optional, as requested): generates getters/setters/constructors via
+             annotations so entity/DTO classes stay short and readable. Compile-time only. -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Test starter: JUnit 5, Mockito, AssertJ, Spring Test / MockMvc. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- In-memory H2 database used ONLY for tests, so the test suite runs without
+             needing a real MySQL server (see src/test/resources/application.properties). -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>student-management-system</finalName>
+        <plugins>
+            <!-- Explicitly registers Lombok as an annotation processor instead of relying
+                 on maven-compiler-plugin's implicit "scan the compile classpath" discovery.
+                 This is Lombok's own officially documented Maven setup
+                 (projectlombok.org/setup/maven) and is the standard fix when a JDK/compiler
+                 upgrade causes @Data/@Builder/@RequiredArgsConstructor etc. to silently stop
+                 generating code (getters/setters/builder() "cannot find symbol" errors) even
+                 though Lombok is correctly on the classpath. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
+            <!-- Packages the app as an executable "fat" jar (java -jar app.jar). Lombok is
+                 excluded from the final jar since it's a compile-time-only tool - none of
+                 its classes are needed (or referenced) at runtime. -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

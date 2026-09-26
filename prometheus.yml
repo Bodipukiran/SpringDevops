@@ -1,0 +1,29 @@
+# =====================================================================
+# prometheus.yml
+#
+# Tells Prometheus which targets to scrape and how often. Mounted into
+# the "prometheus" service in docker-compose.yml at
+# /etc/prometheus/prometheus.yml.
+# =====================================================================
+
+global:
+  scrape_interval: 15s        # how often Prometheus scrapes targets by default
+  evaluation_interval: 15s    # how often alerting/recording rules are evaluated
+
+scrape_configs:
+  # Prometheus scraping itself (useful sanity-check target).
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # The Student Management System Spring Boot app.
+  # "app" resolves via Docker Compose's internal DNS to the app container;
+  # Micrometer (micrometer-registry-prometheus, added in pom.xml) exposes
+  # metrics in Prometheus format at /actuator/prometheus.
+  - job_name: "student-management-system"
+    metrics_path: "/actuator/prometheus"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["app:8080"]
+        labels:
+          application: "student-management-system"
