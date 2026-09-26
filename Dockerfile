@@ -41,10 +41,10 @@ USER spring:spring
 # Copy only the final jar from the build stage.
 COPY --from=build /app/target/student-management-system.jar app.jar
 
-EXPOSE 8080
+EXPOSE 8081
 
 # Basic container-level health check hitting Actuator's health endpoint.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-    CMD wget -qO- http://localhost:8080/actuator/health | grep -q '"status":"UP"' || exit 1
+    CMD wget -qO- http://localhost:8081/actuator/health | grep -q '"status":"UP"' || exit 1
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
