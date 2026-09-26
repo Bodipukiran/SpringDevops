@@ -105,7 +105,7 @@ pipeline {
                     }
                 }
 
-                runCmd("docker run -d --name ${CONTAINER_NAME} -p ${APP_PORT}:8081 ${IMAGE_NAME}:latest")
+                runCmd("docker run -d --name ${CONTAINER_NAME} --network student-management-system_sms-network -p ${APP_PORT}:8081 ${IMAGE_NAME}:latest")
             }
         }
     }
